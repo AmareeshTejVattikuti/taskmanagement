@@ -7,13 +7,14 @@ import com.simplesystems.taskmanagement.entity.Task;
 import com.simplesystems.taskmanagement.enums.TaskStatus;
 import com.simplesystems.taskmanagement.exception.StatusValidationException;
 import com.simplesystems.taskmanagement.exception.TaskNotFoundException;
-import com.simplesystems.taskmanagement.repository.TaskRepository;
+import com.simplesystems.taskmanagement.repository.TaskManagementRepository;
 import com.simplesystems.taskmanagement.dto.request.CreateTask;
 import com.simplesystems.taskmanagement.dto.response.TaskDetails;
 import com.simplesystems.taskmanagement.service.TaskManagementService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,14 +22,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskManagementServiceImpl implements TaskManagementService {
 
-    private final TaskRepository taskRepository;
+    private final TaskManagementRepository taskManagementRepository;
     private final ModelMapper modelMapper;
 
     @Override
     public TaskDetails createTask(CreateTask task) {
-        task.setStatus(TaskStatus.NOT_DONE);
         var taskEntity = modelMapper.map(task, Task.class);
-        taskEntity = taskRepository.save(taskEntity);
+        taskEntity.setStatus(TaskStatus.NOT_DONE);
+        taskEntity = taskManagementRepository.save(taskEntity);
         return modelMapper.map(taskEntity, TaskDetails.class);
     }
 
@@ -38,7 +39,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         var task = getTaskById(updateStatus.getId());
         isSameAsCurrentStatus(task, updateStatus.getStatus());
         setStatusAndCompletionDate(task, updateStatus.getStatus());
-        return modelMapper.map(taskRepository.save(task), TaskDetails.class);
+        return modelMapper.map(taskManagementRepository.save(task), TaskDetails.class);
     }
 
     @Override
@@ -46,25 +47,35 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         var task = getTaskById(description.getId());
         forbidUpdatingPastDueTasks(task.getStatus());
         task.setDescription(description.getDescription());
-        return modelMapper.map(taskRepository.save(task), TaskDetails.class);
+        return modelMapper.map(taskManagementRepository.save(task), TaskDetails.class);
     }
 
     @Override
     public List<TaskDetails> getTasksByStatus(TasksByStatus tasksByStatus) {
         if(tasksByStatus.isFetchAllTasks()) {
-            return taskRepository.findAll().stream()
+            return taskManagementRepository.findAll().stream()
                     .map(task -> modelMapper.map(task, TaskDetails.class))
                     .toList();
         }
-        return taskRepository.findByStatus(tasksByStatus.getStatus()).stream()
+        return taskManagementRepository.findByStatus(tasksByStatus.getStatus()).stream()
                 .map(task -> modelMapper.map(task, TaskDetails.class))
                 .toList();
     }
 
     @Override
     public Task getTaskById(Long id) {
-        return taskRepository.findById(id)
+        return taskManagementRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
+    }
+
+    @Override
+    public void updatePastDueTasks() {
+        List<Task> pastDueTasks = taskManagementRepository.findByDueDateBeforeAndStatus(LocalDate.now(), TaskStatus.NOT_DONE);
+
+        for (Task task : pastDueTasks) {
+            task.setStatus(TaskStatus.PAST_DUE);
+            taskManagementRepository.save(task);
+        }
     }
 
     private void setStatusAndCompletionDate(Task task, TaskStatus status) {
@@ -77,6 +88,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     }
 
     private void isSameAsCurrentStatus(Task task, TaskStatus status) {
+        forbidUpdatingPastDueTasks(task.getStatus());
         if (task.getStatus().equals(status)) {
             throw new StatusValidationException("Task is already in " + status + " status");
         }

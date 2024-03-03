@@ -14,4 +14,5 @@ public interface TaskManagementService {
     TaskDetails updateDescription(UpdateDescription description);
     List<TaskDetails> getTasksByStatus(TasksByStatus tasksByStatus);
     Task getTaskById(Long id);
+    void updatePastDueTasks();
 }

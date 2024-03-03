@@ -1,20 +1,22 @@
 package com.simplesystems.taskmanagement.exception.handler;
 
 import com.simplesystems.taskmanagement.dto.response.ErrorResponse;
+import com.simplesystems.taskmanagement.exception.ScheduleJobFailedException;
 import com.simplesystems.taskmanagement.exception.StatusNotFoundException;
 import com.simplesystems.taskmanagement.exception.StatusValidationException;
 import com.simplesystems.taskmanagement.exception.TaskValidationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 class GlobalExceptionHandlerTest {
 
@@ -26,8 +28,8 @@ class GlobalExceptionHandlerTest {
         String errorMessage = "Validation failed";
         BindingResult bindingResult = createBindingResult(errorMessage);
 
-        ResponseEntity<Object> responseEntity = globalExceptionHandler.handleValidationExceptions(
-                new MethodArgumentNotValidException(null, bindingResult));
+        ResponseEntity<Object> responseEntity = globalExceptionHandler.handleValidationException(
+                new MethodArgumentNotValidException(mock(MethodParameter.class), bindingResult));
 
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         ErrorResponse errorResponse = (ErrorResponse) responseEntity.getBody();
@@ -77,10 +79,24 @@ class GlobalExceptionHandlerTest {
         assertEquals(List.of(errorMessage), errorResponse.message());
     }
 
+    @Test
+    @DisplayName("Test handleScheduleJobFailedExceptions method")
+    void testHandleScheduleJobFailedException() {
+        String errorMessage = "past due tasks updated Job failed with error";
+
+        ResponseEntity<Object> responseEntity = globalExceptionHandler.handleScheduleJobFailedException(
+                new ScheduleJobFailedException(errorMessage));
+
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        ErrorResponse errorResponse = (ErrorResponse) responseEntity.getBody();
+        assert errorResponse != null;
+        assertEquals(List.of(errorMessage), errorResponse.message());
+    }
+
     private BindingResult createBindingResult(String errorMessage) {
         return new BeanPropertyBindingResult(null, "") {
             @Override
-            public List<org.springframework.validation.FieldError> getFieldErrors() {
+            public List<FieldError> getFieldErrors() {
                 return List.of(new org.springframework.validation.FieldError(
                         "object", "field", errorMessage));
             }

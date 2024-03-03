@@ -7,7 +7,7 @@ import com.simplesystems.taskmanagement.dto.request.UpdateStatus;
 import com.simplesystems.taskmanagement.entity.Task;
 import com.simplesystems.taskmanagement.enums.TaskStatus;
 import com.simplesystems.taskmanagement.exception.TaskNotFoundException;
-import com.simplesystems.taskmanagement.repository.TaskRepository;
+import com.simplesystems.taskmanagement.repository.TaskManagementRepository;
 import com.simplesystems.taskmanagement.dto.response.TaskDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
-
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 class TaskManagementServiceImplTest {
 
     @Mock
-    private TaskRepository taskRepository;
+    private TaskManagementRepository taskManagementRepository;
 
     @Mock
     private ModelMapper modelMapper;
@@ -62,14 +63,14 @@ class TaskManagementServiceImplTest {
         expectedTaskDetails.setStatus(TaskStatus.NOT_DONE);
 
         when(modelMapper.map(createTask, Task.class)).thenReturn(taskEntity);
-        when(taskRepository.save(taskEntity)).thenReturn(taskEntity);
+        when(taskManagementRepository.save(taskEntity)).thenReturn(taskEntity);
         when(modelMapper.map(taskEntity, TaskDetails.class)).thenReturn(expectedTaskDetails);
 
         TaskDetails result = taskManagementService.createTask(createTask);
 
         assertNotNull(result);
         assertEquals(expectedTaskDetails, result);
-        verify(taskRepository, times(1)).save(taskEntity);
+        verify(taskManagementRepository, times(1)).save(taskEntity);
     }
 
     @Test
@@ -91,8 +92,8 @@ class TaskManagementServiceImplTest {
         expectedTaskDetails.setId(1L);
         expectedTaskDetails.setStatus(TaskStatus.DONE);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
-        when(taskRepository.save(existingTask)).thenReturn(updatedTaskEntity);
+        when(taskManagementRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskManagementRepository.save(existingTask)).thenReturn(updatedTaskEntity);
         when(modelMapper.map(updatedTaskEntity, TaskDetails.class)).thenReturn(expectedTaskDetails);
 
         TaskDetails result = taskManagementService.updateTask(updateStatus);
@@ -100,8 +101,8 @@ class TaskManagementServiceImplTest {
         assertNotNull(result);
         assertEquals(TaskStatus.DONE, result.getStatus());
 
-        verify(taskRepository, times(1)).findById(1L);
-        verify(taskRepository, times(1)).save(existingTask);
+        verify(taskManagementRepository, times(1)).findById(1L);
+        verify(taskManagementRepository, times(1)).save(existingTask);
         verify(modelMapper, times(1)).map(updatedTaskEntity, TaskDetails.class);
     }
 
@@ -112,10 +113,10 @@ class TaskManagementServiceImplTest {
         updateStatus.setId(1L);
         updateStatus.setStatus(TaskStatus.DONE);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
+        when(taskManagementRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskManagementService.updateTask(updateStatus));
-        verify(taskRepository, never()).save(any());
+        verify(taskManagementRepository, never()).save(any());
     }
 
     @Test
@@ -131,7 +132,7 @@ class TaskManagementServiceImplTest {
         expectedTaskDetails.setDescription("Test");
         expectedTaskDetails.setStatus(TaskStatus.NOT_DONE);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(taskEntity));
+        when(taskManagementRepository.findById(1L)).thenReturn(Optional.of(taskEntity));
         when(modelMapper.map(taskEntity, TaskDetails.class)).thenReturn(expectedTaskDetails);
 
         Task result = taskManagementService.getTaskById(1L);
@@ -145,7 +146,7 @@ class TaskManagementServiceImplTest {
     @Test
     @DisplayName("Test getTaskById method - TaskNotFoundException")
     void testGetTaskByIdTaskNotFoundException() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
+        when(taskManagementRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskManagementService.getTaskById(1L));
     }
@@ -169,8 +170,8 @@ class TaskManagementServiceImplTest {
         expectedTaskDetails.setId(1L);
         expectedTaskDetails.setDescription("Updated description");
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
-        when(taskRepository.save(existingTask)).thenReturn(updatedTaskEntity);
+        when(taskManagementRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+        when(taskManagementRepository.save(existingTask)).thenReturn(updatedTaskEntity);
         when(modelMapper.map(updatedTaskEntity, TaskDetails.class)).thenReturn(expectedTaskDetails);
 
         TaskDetails result = taskManagementService.updateDescription(updateDescription);
@@ -178,8 +179,8 @@ class TaskManagementServiceImplTest {
         assertNotNull(result);
         assertEquals("Updated description", result.getDescription());
 
-        verify(taskRepository, times(1)).findById(1L);
-        verify(taskRepository, times(1)).save(existingTask);
+        verify(taskManagementRepository, times(1)).findById(1L);
+        verify(taskManagementRepository, times(1)).save(existingTask);
         verify(modelMapper, times(1)).map(updatedTaskEntity, TaskDetails.class);
     }
 
@@ -209,7 +210,7 @@ class TaskManagementServiceImplTest {
 
         List<TaskDetails> expectedTaskDetailsList = Arrays.asList(taskDetails1, taskDetails2);
 
-        when(taskRepository.findAll()).thenReturn(tasks);
+        when(taskManagementRepository.findAll()).thenReturn(tasks);
         when(modelMapper.map(task1, TaskDetails.class)).thenReturn(taskDetails1);
         when(modelMapper.map(task2, TaskDetails.class)).thenReturn(taskDetails2);
 
@@ -218,7 +219,7 @@ class TaskManagementServiceImplTest {
         assertNotNull(result);
         assertEquals(expectedTaskDetailsList.size(), result.size());
 
-        verify(taskRepository, times(1)).findAll();
+        verify(taskManagementRepository, times(1)).findAll();
         verify(modelMapper, times(1)).map(task1, TaskDetails.class);
         verify(modelMapper, times(1)).map(task2, TaskDetails.class);
     }
@@ -242,7 +243,7 @@ class TaskManagementServiceImplTest {
 
         List<TaskDetails> expectedTaskDetailsList = List.of(taskDetails1);
 
-        when(taskRepository.findByStatus(TaskStatus.NOT_DONE)).thenReturn(tasks);
+        when(taskManagementRepository.findByStatus(TaskStatus.NOT_DONE)).thenReturn(tasks);
         when(modelMapper.map(task1, TaskDetails.class)).thenReturn(taskDetails1);
 
         List<TaskDetails> result = taskManagementService.getTasksByStatus(tasksByStatus);
@@ -250,8 +251,24 @@ class TaskManagementServiceImplTest {
         assertNotNull(result);
         assertEquals(expectedTaskDetailsList.size(), result.size());
 
-        verify(taskRepository, times(1)).findByStatus(TaskStatus.NOT_DONE);
+        verify(taskManagementRepository, times(1)).findByStatus(TaskStatus.NOT_DONE);
         verify(modelMapper, times(1)).map(task1, TaskDetails.class);
+    }
+
+    @Test
+    void testUpdatePastDueTasks() {
+        Task pastDueTask = new Task();
+        pastDueTask.setId(1L);
+        pastDueTask.setDueDate(LocalDate.now().minusDays(1));
+        pastDueTask.setStatus(TaskStatus.NOT_DONE);
+
+        when(taskManagementRepository.findByDueDateBeforeAndStatus(any(LocalDate.class), eq(TaskStatus.NOT_DONE)))
+                .thenReturn(List.of(pastDueTask));
+
+        taskManagementService.updatePastDueTasks();
+
+        verify(taskManagementRepository, times(1)).save(pastDueTask);
+        assertEquals(TaskStatus.PAST_DUE, pastDueTask.getStatus());
     }
 
 }

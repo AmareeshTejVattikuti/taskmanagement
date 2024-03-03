@@ -1,6 +1,7 @@
 package com.simplesystems.taskmanagement.exception.handler;
 
 import com.simplesystems.taskmanagement.dto.response.ErrorResponse;
+import com.simplesystems.taskmanagement.exception.ScheduleJobFailedException;
 import com.simplesystems.taskmanagement.exception.StatusNotFoundException;
 import com.simplesystems.taskmanagement.exception.StatusValidationException;
 import com.simplesystems.taskmanagement.exception.TaskValidationException;
@@ -15,7 +16,7 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Object> handleValidationException(MethodArgumentNotValidException ex) {
         return ResponseEntity.badRequest().body(createErrorResponse(ex.getBindingResult()));
     }
 
@@ -31,6 +32,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StatusNotFoundException.class)
     public ResponseEntity<Object> handleStatusNotFoundException(StatusNotFoundException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(List.of(ex.getMessage())));
+    }
+
+    @ExceptionHandler(ScheduleJobFailedException.class)
+    public ResponseEntity<Object> handleScheduleJobFailedException(ScheduleJobFailedException ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse(List.of(ex.getMessage())));
     }
 
