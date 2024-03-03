@@ -43,17 +43,26 @@ Make sure you have JDK 17 and Maven installed on your machine.
 ## Access h2-console
 The H2 in-memory database console is enabled and can be accessed using the following URL: http://localhost:8080/h2-console
 
-##Build and Run the Service in Local Environment
+## Build and Run the Service in Local Environment
 ```bash
 # Build the project
 mvn clean install
 
-# Run tests
-mvn test
+# Run tests (generate jacoco test coverage report) 
+mvn clean test
+mvn jacoco:report
 
 # Run the service
 mvn spring-boot:run
 ```
+## Code Coverage
+Option 1:- Easy way is to run all the tests using IDE like intellij to use "Run with Coverage" that give us complete code coverage
+
+Option 2:- The code coverage report can be found in the following location: target/site/jacoco/index.html
+after running the tests as mentioned above. You can open this index.html file in a browser to see the code coverage report.
+
+
+
 
 # Build the Docker image and run the service in a container
 ```bash
