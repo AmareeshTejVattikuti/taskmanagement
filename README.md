@@ -55,13 +55,12 @@ mvn jacoco:report
 # Run the service
 mvn spring-boot:run
 ```
+
 ## Code Coverage
 Option 1:- Easy way is to run all the tests using IDE like intellij to use "Run with Coverage" that give us complete code coverage
 
 Option 2:- The code coverage report can be found in the following location: target/site/jacoco/index.html
 after running the tests as mentioned above. You can open this index.html file in a browser to see the code coverage report.
-
-
 
 
 # Build the Docker image and run the service in a container
@@ -72,7 +71,6 @@ after running the tests as mentioned above. You can open this index.html file in
 docker build -t task-management-service .
 docker run -p 8080:8080 task-management-service
 ```
-
 
 ## How to Use the Service
 Connect to the service using the following base URL: http://localhost:8080 from any REST client such as Postman or cURL.
@@ -118,3 +116,19 @@ Sample request body:
 Get Task by ID: 
 **GET** http://localhost:8080/api/v1/task/{id}
 here provide the id of the task in the URL
+
+## Enable Scheduled Job
+The service includes a scheduled job that runs at the specific cron schedule provided in the application.yaml to mark tasks as "Past Due" if their due date has passed. 
+Enable job by setting the following property in application.yaml file:
+```
+job:
+     enable-past-due-tasks-updater: true
+``` 
+
+Schedule can be changed in application.yaml file as per the requirement. For example, to run the job every 2 minutes, use the following cron expression in the application.yaml file:
+```
+  task:
+    scheduling:
+      cron:
+        expression: "0 */2 * * * *" ##runs every 2 minutes
+```
