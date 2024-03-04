@@ -18,6 +18,8 @@ spring:
     scheduling:
       cron:
         expression: "0 */2 * * * *" ##runs every 2 minutes
+job:
+  enable-past-due-tasks-updater: true
 
 management:
   endpoints:
